@@ -1,12 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather app of Chile</title>
-    <link rel="stylesheet" href="../static/css/style.css">
+    <title>Clima de Chile - Mapa Interactivo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <h1>Test of the app</h1>
+    <div class="container">
+        <header>
+            <h1>🌤️ Clima de Chile</h1>
+            <p>Haz clic en el mapa o busca una ciudad</p>
+        </header>
+
+        <div class="content">
+            <!-- Search Form -->
+            <div class="search-section">
+                <form method="POST" action="/">
+                    <input type="text" name="city" placeholder="Buscar ciudad chilena..." required>
+                    <button type="submit">🔍 Buscar</button>
+                </form>
+
+                {% if error %}
+                <div class="error">{{ error }}</div>
+                {% endif %}
+
+                {% if weather %}
+                <div class="weather-card">
+                    <h2>{{ weather.city }}</h2>
+                    <div class="weather-icon">
+                        <img src="http://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" alt="Weather icon">
+                    </div>
+                    <div class="temperature">{{ weather.temperature }}°C</div>
+                    <div class="description">{{ weather.description|capitalize }}</div>
+                    <div class="details">
+                        <div class="detail-item">
+                            <span>💧 Humedad:</span>
+                            <span>{{ weather.humidity }}%</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>💨 Viento:</span>
+                            <span>{{ weather.wind_speed }} m/s</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if weather.air_quality %}
+                <div class="air-quality-card">
+                    <h3>🌬️ Calidad del Aire</h3>
+                    <div class="aqi-badge" style="background-color: {{ weather.air_quality.color }}">
+                        <div class="aqi-number">{{ weather.air_quality.aqi }}</div>
+                        <div class="aqi-label">{{ weather.air_quality.label }}</div>
+                    </div>
+                    <div class="air-components">
+                        <div class="component">
+                            <span class="component-label">PM2.5</span>
+                            <span class="component-value">{{ weather.air_quality.pm2_5 }} μg/m³</span>
+                        </div>
+                        <div class="component">
+                            <span class="component-label">PM10</span>
+                            <span class="component-value">{{ weather.air_quality.pm10 }} μg/m³</span>
+                        </div>
+                        <div class="component">
+                            <span class="component-label">CO</span>
+                            <span class="component-value">{{ weather.air_quality.co }} μg/m³</span>
+                        </div>
+                        <div class="component">
+                            <span class="component-label">NO₂</span>
+                            <span class="component-value">{{ weather.air_quality.no2 }} μg/m³</span>
+                        </div>
+                        <div class="component">
+                            <span class="component-label">O₃</span>
+                            <span class="component-value">{{ weather.air_quality.o3 }} μg/m³</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Interactive Map -->
+            <div class="map-section">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map centered on Chile with proper bounds
+        const chileBounds = [
+            [-56.0, -76.0],  // Southwest coordinates (Punta Arenas area)
+            [-17.0, -66.0]   // Northeast coordinates (Arica area)
+        ];
+        
+        const map = L.map('map').fitBounds(chileBounds);
+        map.setMaxBounds(chileBounds);
+        map.setMinZoom(4);
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18,
+            minZoom: 4
+        }).addTo(map);
+
+        // Major Chilean cities with coordinates
+        const chileanCities = [
+            { name: 'Santiago', lat: -33.4489, lon: -70.6693 },
+            { name: 'Valparaíso', lat: -33.0472, lon: -71.6127 },
+            { name: 'Concepción', lat: -36.8270, lon: -73.0498 },
+            { name: 'La Serena', lat: -29.9027, lon: -71.2519 },
+            { name: 'Antofagasta', lat: -23.6509, lon: -70.3975 },
+            { name: 'Temuco', lat: -38.7359, lon: -72.5904 },
+            { name: 'Rancagua', lat: -34.1708, lon: -70.7406 },
+            { name: 'Talca', lat: -35.4264, lon: -71.6554 },
+            { name: 'Arica', lat: -18.4746, lon: -70.2979 },
+            { name: 'Puerto Montt', lat: -41.4693, lon: -72.9424 },
+            { name: 'Chillán', lat: -36.6067, lon: -72.1034 },
+            { name: 'Iquique', lat: -20.2307, lon: -70.1409 },
+            { name: 'Los Ángeles', lat: -37.4688, lon: -72.3527 },
+            { name: 'Valdivia', lat: -39.8142, lon: -73.2459 },
+            { name: 'Osorno', lat: -40.5742, lon: -73.1317 },
+            { name: 'Copiapó', lat: -27.3668, lon: -70.3323 },
+            { name: 'Punta Arenas', lat: -53.1638, lon: -70.9171 }
+        ];
+
+        // Add markers for each city
+        chileanCities.forEach(city => {
+            const marker = L.marker([city.lat, city.lon])
+                .addTo(map)
+                .bindPopup(`<b>${city.name}</b><br>Haz clic para ver el clima`);
+
+            // Add click event to fetch weather
+            marker.on('click', function() {
+                // Submit form with city name
+                document.querySelector('input[name="city"]').value = city.name;
+                document.querySelector('form').submit();
+            });
+        });
+
+        // Add click event on map to get weather for clicked location
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lon = e.latlng.lng;
+            
+            // Fetch weather by coordinates
+            fetch(`/weather-by-coords?lat=${lat}&lon=${lon}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.querySelector('input[name="city"]').value = data.city;
+                        document.querySelector('form').submit();
+                    }
+                });
+        });
+    </script>
 </body>
 </html>
