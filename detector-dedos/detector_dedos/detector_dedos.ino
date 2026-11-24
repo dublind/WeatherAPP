@@ -28,12 +28,19 @@
 */
 
 #include <Arduino.h>
+
+// Pon 0 si todavia NO tienes la pantalla OLED conectada: el proyecto funciona
+// solo con los LEDs (y no hace falta instalar U8g2). Pon 1 cuando la conectes.
+#define USAR_PANTALLA 1
+
+#if USAR_PANTALLA
 #include <Wire.h>
 #include <U8g2lib.h>
 
 // U8G2_R2 = imagen girada 180 grados (la OLED va con los pines hacia abajo
 // en la protoboard). Si el texto te sale de cabeza, cambia U8G2_R2 por U8G2_R0.
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R2, U8X8_PIN_NONE);
+#endif
 
 const uint8_t NUM_DEDOS = 5;
 const uint8_t PIN_LED[NUM_DEDOS] = {2, 3, 4, 5, 6};
@@ -53,6 +60,7 @@ uint8_t largo = 0;
 // Titulo en la franja amarilla, texto grande en la azul
 // y abajo una barra por dedo (alta = levantado).
 void dibujar(const char *titulo, const char *texto) {
+#if USAR_PANTALLA
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_6x12_tf);
@@ -66,6 +74,10 @@ void dibujar(const char *titulo, const char *texto) {
       oled.drawBox(8 + i * 24, 64 - alto, 16, alto);
     }
   } while (oled.nextPage());
+#else
+  (void)titulo;   // sin pantalla no hay nada que dibujar
+  (void)texto;
+#endif
 }
 
 void mostrarEstado() {
@@ -139,7 +151,9 @@ void setup() {
     pinMode(PIN_LED[i], OUTPUT);
   }
   Serial.begin(9600);
+#if USAR_PANTALLA
   oled.begin();
+#endif
 
   // Prueba de LEDs: se encienden uno por uno al arrancar
   for (uint8_t i = 0; i < NUM_DEDOS; i++) {
