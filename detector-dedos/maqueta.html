@@ -1,0 +1,454 @@
+<title>Detector de Dedos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: hoja de taller. La maqueta manda arriba a todo el ancho; debajo, tabla de cables, materiales, pasos y código. */
+:root {
+  --bg: #f4f7f8;
+  --surface: #ffffff;
+  --fg: #142a30;
+  --muted: #557078;
+  --line: #d3dee1;
+  --accent: #00727a;
+  --canvas: #e6edef;
+  --code-bg: #0f2328;
+  --code-fg: #d7e6e9;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1c20; --surface: #15282d; --fg: #e3eef0; --muted: #94adb3; --line: #29444b;
+    --accent: #4fc3cb; --canvas: #d5dfe2; --code-bg: #0a1619; --code-fg: #d7e6e9; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1c20; --surface: #15282d; --fg: #e3eef0; --muted: #94adb3; --line: #29444b;
+  --accent: #4fc3cb; --canvas: #d5dfe2; --code-bg: #0a1619; --code-fg: #d7e6e9; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font: 16px/1.55 var(--body);
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+header p { color: var(--muted); max-width: 65ch; margin: 8px 0 0; }
+h1 { font: 700 2.1rem/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 1.25rem/1.2 var(--display); margin: 0 0 12px; text-wrap: balance; }
+.eyebrow { font: 600 .75rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+.board { background: var(--canvas); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.board svg { display: block; width: 100%; min-width: 860px; height: auto; }
+.hint { color: var(--muted); font-size: .875rem; margin: 8px 0 0; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; }
+.cols > * { min-width: 0; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td.pin { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+.sw { display: inline-block; width: 22px; height: 6px; border-radius: 3px; vertical-align: middle; margin-right: 8px; border: 1px solid rgba(0,0,0,.25); }
+ul, ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; max-width: 65ch; }
+code { font-family: var(--mono); font-size: .88em; }
+.note { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; color: var(--muted); max-width: 65ch; font-size: .92rem; margin: 14px 0 0; }
+.codehead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+button { font: 600 .85rem var(--body); color: var(--surface); background: var(--accent); border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 16px; overflow-x: auto; font: 400 .8rem/1.55 var(--mono); margin: 0; max-height: 560px; tab-size: 2; }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">Arduino Uno · OLED SSD1306 · 5 sensores flex</p>
+    <h1>Detector de Dedos</h1>
+    <p>Un guante con un sensor flex por dedo. El Arduino lee cuánto se dobla cada uno y la pantalla OLED muestra el nombre del dedo que está levantado.</p>
+  </header>
+
+  <section>
+    <h2>Maqueta</h2>
+    <div class="board"><svg id="maqueta" viewBox="0 0 1130 740" role="img" aria-label="Diagrama de conexiones: Arduino Uno, protoboard con pantalla OLED y cinco sensores flex con sus resistencias"></svg></div>
+    <p class="hint">En la protoboard, los 5 agujeros de cada columna están unidos entre sí (arriba y abajo del canal por separado). Los rieles rojo y azul recorren todo el largo.</p>
+  </section>
+
+  <div class="cols">
+    <section>
+      <h2>Cable por cable</h2>
+      <div class="tablewrap">
+      <table>
+        <thead><tr><th>Desde</th><th>Hasta</th><th>Pin Uno</th></tr></thead>
+        <tbody>
+          <tr><td><span class="sw" style="background:#d62828"></span>Riel rojo (+)</td><td>Alimentación</td><td class="pin">5V</td></tr>
+          <tr><td><span class="sw" style="background:#1b1b1b"></span>Riel azul (−)</td><td>Tierra</td><td class="pin">GND</td></tr>
+          <tr><td><span class="sw" style="background:#e67e22"></span>Flex pulgar</td><td>Unión sensor + resistencia</td><td class="pin">A0</td></tr>
+          <tr><td><span class="sw" style="background:#e6c200"></span>Flex índice</td><td>Unión sensor + resistencia</td><td class="pin">A1</td></tr>
+          <tr><td><span class="sw" style="background:#2e9e52"></span>Flex medio</td><td>Unión sensor + resistencia</td><td class="pin">A2</td></tr>
+          <tr><td><span class="sw" style="background:#2f7fd1"></span>Flex anular</td><td>Unión sensor + resistencia</td><td class="pin">A3</td></tr>
+          <tr><td><span class="sw" style="background:#8e44ad"></span>Flex meñique</td><td>Unión sensor + resistencia</td><td class="pin">A4</td></tr>
+          <tr><td><span class="sw" style="background:#12a08a"></span>OLED SDA</td><td>Datos I2C</td><td class="pin">D3</td></tr>
+          <tr><td><span class="sw" style="background:#8a5a3c"></span>OLED SCL</td><td>Reloj I2C</td><td class="pin">D2</td></tr>
+          <tr><td><span class="sw" style="background:#d62828"></span>OLED VCC</td><td>Riel rojo (+)</td><td class="pin">5V</td></tr>
+          <tr><td><span class="sw" style="background:#1b1b1b"></span>OLED GND</td><td>Riel azul (−)</td><td class="pin">GND</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="note">Cada sensor flex lleva tres cosas: una pata al riel rojo, la otra pata al pin analógico, y desde esa misma columna una resistencia de 10 kΩ al riel azul.</p>
+    </section>
+
+    <section>
+      <h2>Materiales</h2>
+      <ul>
+        <li>Arduino Uno con cable USB</li>
+        <li>Pantalla OLED SSD1306 128x64 I2C (la que ya compraste)</li>
+        <li>5 sensores flex de 2,2"</li>
+        <li>5 resistencias de 10 kΩ (café, negro, naranja)</li>
+        <li>Protoboard de 830 puntos</li>
+        <li>Unos 20 cables dupont macho-macho</li>
+        <li>Un guante y cinta o hilo para fijar los sensores</li>
+      </ul>
+      <p class="note">La OLED usa D2 y D3 en vez de A4 y A5, porque A4 lo ocupa el meñique. El código maneja el I2C por software con la librería U8g2.</p>
+    </section>
+
+    <section>
+      <h2>Puesta en marcha</h2>
+      <ol>
+        <li>En el Arduino IDE abre <code>Herramientas → Administrar bibliotecas</code> e instala <code>U8g2</code>.</li>
+        <li>Arma el circuito con el Arduino desconectado del USB.</li>
+        <li>Sube el sketch <code>detector_dedos.ino</code>.</li>
+        <li>Cuando la pantalla diga ABRE, deja la mano abierta. Cuando diga CIERRA, haz un puño. Así se calibra solo.</li>
+        <li>Levanta un dedo: la pantalla muestra su nombre. Con RESET se calibra de nuevo.</li>
+      </ol>
+      <p class="note">Mira las letras impresas en tu OLED antes de cablear: algunos módulos traen VCC y GND en el orden contrario. Si el texto sale de cabeza, cambia <code>U8G2_R2</code> por <code>U8G2_R0</code> en el código.</p>
+    </section>
+  </div>
+
+  <section>
+    <div class="codehead">
+      <h2>Código</h2>
+      <button id="copiar" type="button">Copiar código</button>
+    </div>
+    <pre id="codigo" tabindex="0">/*
+  DETECTOR DE DEDOS - Arduino Uno + OLED SSD1306 128x64 (I2C)
+  ------------------------------------------------------------
+  Un sensor flex por dedo. La pantalla muestra el nombre del dedo levantado.
+
+  Libreria necesaria: &quot;U8g2&quot; de oliver
+  (Arduino IDE &gt; Herramientas &gt; Administrar bibliotecas &gt; buscar U8g2)
+
+  CONEXIONES
+    Sensor flex pulgar   -&gt; A0
+    Sensor flex indice   -&gt; A1
+    Sensor flex medio    -&gt; A2
+    Sensor flex anular   -&gt; A3
+    Sensor flex menique  -&gt; A4
+    (cada sensor: una pata a 5V, la otra a su pin analogico
+     y a una resistencia de 10k que va a GND)
+
+    OLED VCC -&gt; 5V
+    OLED GND -&gt; GND
+    OLED SCL -&gt; D2
+    OLED SDA -&gt; D3
+    (la OLED va por I2C por software porque A4 lo usa el menique)
+*/
+
+#include &lt;Arduino.h&gt;
+#include &lt;U8g2lib.h&gt;
+
+// ---------- Pantalla ----------
+const uint8_t PIN_SCL = 2;
+const uint8_t PIN_SDA = 3;
+
+// U8G2_R2 = imagen girada 180 grados (la OLED va con los pines hacia abajo
+// en la protoboard). Si el texto te sale de cabeza, cambia U8G2_R2 por U8G2_R0.
+U8G2_SSD1306_128X64_NONAME_1_SW_I2C oled(U8G2_R2, PIN_SCL, PIN_SDA, U8X8_PIN_NONE);
+
+// ---------- Dedos ----------
+const uint8_t NUM_DEDOS = 5;
+const uint8_t PIN_DEDO[NUM_DEDOS] = {A0, A1, A2, A3, A4};
+const char *const NOMBRE[NUM_DEDOS] = {&quot;PULGAR&quot;, &quot;ÍNDICE&quot;, &quot;MEDIO&quot;, &quot;ANULAR&quot;, &quot;MEÑIQUE&quot;};
+
+// Un dedo pasa a &quot;levantado&quot; sobre 60% y a &quot;doblado&quot; bajo 40%.
+// La zona intermedia evita que el nombre parpadee.
+const int UMBRAL_SUBE = 60;
+const int UMBRAL_BAJA = 40;
+
+int valorAbierto[NUM_DEDOS];   // lectura con el dedo estirado
+int valorCerrado[NUM_DEDOS];   // lectura con el dedo doblado
+bool levantado[NUM_DEDOS];
+bool levantadoAntes[NUM_DEDOS];
+
+// Promedia varias lecturas para quitar ruido
+int leerDedo(uint8_t i) {
+  long suma = 0;
+  for (uint8_t n = 0; n &lt; 8; n++) {
+    suma += analogRead(PIN_DEDO[i]);
+  }
+  return suma / 8;
+}
+
+// 0 = dedo doblado, 100 = dedo estirado
+int porcentaje(uint8_t i) {
+  int rango = valorAbierto[i] - valorCerrado[i];
+  if (abs(rango) &lt; 15) {
+    return 0;   // sensor desconectado o mal calibrado
+  }
+  long p = (long)(leerDedo(i) - valorCerrado[i]) * 100L / rango;
+  return constrain(p, 0, 100);
+}
+
+// Dibuja la pantalla: titulo en la franja amarilla, texto grande en la azul
+// y abajo una barra por dedo (alta = levantado).
+void dibujar(const char *titulo, const char *texto, bool conBarras) {
+  oled.firstPage();
+  do {
+    oled.setFont(u8g2_font_6x12_tf);
+    oled.drawUTF8((128 - oled.getUTF8Width(titulo)) / 2, 12, titulo);
+
+    oled.setFont(u8g2_font_helvB14_tf);
+    oled.drawUTF8((128 - oled.getUTF8Width(texto)) / 2, conBarras ? 38 : 46, texto);
+
+    if (conBarras) {
+      for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+        uint8_t alto = levantado[i] ? 18 : 4;
+        oled.drawBox(8 + i * 24, 64 - alto, 16, alto);
+      }
+    }
+  } while (oled.nextPage());
+}
+
+// Muestra una instruccion, espera y guarda la lectura de cada dedo
+void medir(const char *instruccion, int destino[]) {
+  dibujar(&quot;CALIBRANDO&quot;, instruccion, false);
+  delay(2500);
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    destino[i] = leerDedo(i);
+  }
+}
+
+void calibrar() {
+  medir(&quot;ABRE&quot;, valorAbierto);     // mano abierta, dedos estirados
+  medir(&quot;CIERRA&quot;, valorCerrado);   // puno cerrado
+  dibujar(&quot;CALIBRANDO&quot;, &quot;LISTO&quot;, false);
+  delay(800);
+
+  Serial.println(F(&quot;Calibracion (abierto / cerrado):&quot;));
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    Serial.print(NOMBRE[i]);
+    Serial.print(F(&quot;: &quot;));
+    Serial.print(valorAbierto[i]);
+    Serial.print(F(&quot; / &quot;));
+    Serial.println(valorCerrado[i]);
+  }
+}
+
+void mostrarEstado() {
+  uint8_t cuantos = 0;
+  uint8_t ultimo = 0;
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    if (levantado[i]) {
+      cuantos++;
+      ultimo = i;
+    }
+  }
+
+  char texto[12];
+  if (cuantos == 0) {
+    dibujar(&quot;NINGUN DEDO&quot;, &quot;PUÑO&quot;, true);
+  } else if (cuantos == 1) {
+    dibujar(&quot;DEDO LEVANTADO&quot;, NOMBRE[ultimo], true);
+  } else if (cuantos == NUM_DEDOS) {
+    dibujar(&quot;DEDOS LEVANTADOS&quot;, &quot;TODOS&quot;, true);
+  } else {
+    snprintf(texto, sizeof(texto), &quot;%u DEDOS&quot;, cuantos);
+    dibujar(&quot;DEDOS LEVANTADOS&quot;, texto, true);
+  }
+
+  // Lo mismo por el monitor serie (9600 baudios)
+  Serial.print(F(&quot;Levantados:&quot;));
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    if (levantado[i]) {
+      Serial.print(&#x27; &#x27;);
+      Serial.print(NOMBRE[i]);
+    }
+  }
+  Serial.println();
+}
+
+void setup() {
+  Serial.begin(9600);
+  oled.begin();
+  calibrar();   // para calibrar de nuevo, presiona RESET en el Arduino
+  mostrarEstado();
+}
+
+void loop() {
+  bool cambio = false;
+
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    int p = porcentaje(i);
+    if (p &gt;= UMBRAL_SUBE) {
+      levantado[i] = true;
+    } else if (p &lt;= UMBRAL_BAJA) {
+      levantado[i] = false;
+    }
+    if (levantado[i] != levantadoAntes[i]) {
+      levantadoAntes[i] = levantado[i];
+      cambio = true;
+    }
+  }
+
+  // Solo redibuja cuando algo cambia: la pantalla por software es lenta
+  if (cambio) {
+    mostrarEstado();
+  }
+  delay(30);
+}
+</pre>
+  </section>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('maqueta');
+  function el(tag, attrs, text, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const FONT = 'Inter, Segoe UI, system-ui, sans-serif';
+  const MONO = 'JetBrains Mono, ui-monospace, Menlo, monospace';
+  function label(x, y, t, o) {
+    o = o || {};
+    return el('text', { x: x, y: y, 'font-family': o.mono ? MONO : FONT, 'font-size': o.size || 11, 'font-weight': o.weight || 600,
+      fill: o.fill || '#142a30', 'text-anchor': o.anchor || 'middle', transform: o.rot ? 'rotate(' + o.rot + ' ' + x + ' ' + y + ')' : '' }, t);
+  }
+
+  // ---------- Geometría ----------
+  const colX = c => 490 + 16 * c;
+  const ROW = { a: 392, b: 408, c: 424, d: 440, e: 456, f: 488, g: 504, h: 520, i: 536, j: 552 };
+  const RAIL_P = 588, RAIL_N = 606;
+  const TOP_Y = 344, BOT_Y = 546;
+  const PIN = {};
+  ['SCL', 'SDA', 'AREF', 'GND', '13', '12', '11', '10', '9', '8'].forEach((n, i) => PIN['t' + n] = 130 + 14 * i);
+  ['7', '6', '5', '4', '3', '2', '1', '0'].forEach((n, i) => PIN['t' + n] = 278 + 14 * i);
+  ['IOREF', 'RST', '3V3', '5V', 'GND', 'GND2', 'VIN'].forEach((n, i) => PIN['b' + n] = 180 + 14 * i);
+  ['A0', 'A1', 'A2', 'A3', 'A4', 'A5'].forEach((n, i) => PIN['b' + n] = 292 + 14 * i);
+
+  // ---------- Arduino Uno ----------
+  el('rect', { x: 40, y: 330, width: 360, height: 230, rx: 10, fill: '#0e7490', stroke: '#0a5568', 'stroke-width': 2 });
+  el('rect', { x: 22, y: 358, width: 62, height: 52, rx: 3, fill: '#b9c0c4', stroke: '#7d868b' });          // USB
+  el('rect', { x: 26, y: 478, width: 60, height: 50, rx: 4, fill: '#1c1c1c' });                             // jack
+  el('rect', { x: 196, y: 452, width: 150, height: 34, rx: 3, fill: '#1c1c1c' });                           // ATmega
+  for (let i = 0; i < 14; i++) { el('rect', { x: 201 + i * 10.3, y: 448, width: 4, height: 4, fill: '#c9cfd2' }); el('rect', { x: 201 + i * 10.3, y: 486, width: 4, height: 4, fill: '#c9cfd2' }); }
+  el('rect', { x: 100, y: 352, width: 22, height: 22, rx: 3, fill: '#c9cfd2' }); el('circle', { cx: 111, cy: 363, r: 6, fill: '#b23b3b' }); // reset
+  label(111, 388, 'RESET', { size: 7, fill: '#d8f1f5' });
+  label(215, 425, 'ARDUINO UNO', { size: 18, weight: 700, fill: '#e8fbff' });
+  function header(names, x0, y, key, labelDy) {
+    el('rect', { x: x0 - 8, y: y - 8, width: names.length * 14 + 2, height: 16, rx: 2, fill: '#141414' });
+    names.forEach((n, i) => {
+      const x = x0 + 14 * i;
+      el('rect', { x: x - 3.5, y: y - 3.5, width: 7, height: 7, fill: '#4a4a4a' });
+      label(x + 2.5, y + labelDy, n.replace('GND2', 'GND'), { size: 7, fill: '#e8fbff', rot: -90, anchor: labelDy > 0 ? 'end' : 'start', mono: true });
+    });
+  }
+  header(['SCL', 'SDA', 'AREF', 'GND', '13', '12', '11', '10', '9', '8'], 130, TOP_Y, 't', 13);
+  header(['7', '6', '5', '4', '3', '2', '1', '0'], 278, TOP_Y, 't', 13);
+  header(['IOREF', 'RST', '3V3', '5V', 'GND', 'GND2', 'VIN'], 180, BOT_Y, 'b', -13);
+  header(['A0', 'A1', 'A2', 'A3', 'A4', 'A5'], 292, BOT_Y, 'b', -13);
+
+  // ---------- Protoboard ----------
+  el('rect', { x: 470, y: 372, width: 616, height: 254, rx: 8, fill: '#f6f5f0', stroke: '#b9b7ad', 'stroke-width': 2 });
+  el('rect', { x: 476, y: 466, width: 604, height: 12, fill: '#dddbd2' });                                  // canal
+  el('line', { x1: 484, y1: RAIL_P - 9, x2: 1072, y2: RAIL_P - 9, stroke: '#d62828', 'stroke-width': 1.5 });
+  el('line', { x1: 484, y1: RAIL_N + 9, x2: 1072, y2: RAIL_N + 9, stroke: '#2f5fd1', 'stroke-width': 1.5 });
+  label(479, RAIL_P + 4, '+', { size: 12, fill: '#d62828', weight: 700 });
+  label(479, RAIL_N + 4, '−', { size: 12, fill: '#2f5fd1', weight: 700 });
+  for (let c = 0; c <= 36; c++) {
+    for (const r in ROW) el('rect', { x: colX(c) - 2.5, y: ROW[r] - 2.5, width: 5, height: 5, rx: 1, fill: '#3a3a36' });
+    el('rect', { x: colX(c) - 2.5, y: RAIL_P - 2.5, width: 5, height: 5, rx: 1, fill: '#3a3a36' });
+    el('rect', { x: colX(c) - 2.5, y: RAIL_N - 2.5, width: 5, height: 5, rx: 1, fill: '#3a3a36' });
+  }
+  ['a', 'e', 'f', 'j'].forEach(r => label(1078, ROW[r] + 3, r, { size: 8, fill: '#8b897f', mono: true }));
+
+  // ---------- Cables ----------
+  function wire(pts, color) {
+    const p = pts.map(q => q.join(',')).join(' ');
+    el('polyline', { points: p, fill: 'none', stroke: 'rgba(0,0,0,.35)', 'stroke-width': 6, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+    el('polyline', { points: p, fill: 'none', stroke: color, 'stroke-width': 3.6, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+    [pts[0], pts[pts.length - 1]].forEach(q => el('circle', { cx: q[0], cy: q[1], r: 3.2, fill: '#d9dde0', stroke: '#333', 'stroke-width': 1 }));
+  }
+  const RED = '#d62828', BLACK = '#1b1b1b';
+  // Alimentación: 5V y GND rodean por abajo y entran a los rieles por la derecha
+  wire([[PIN.b5V, BOT_Y], [PIN.b5V, 718], [1113, 718], [1113, RAIL_P], [colX(36), RAIL_P]], RED);
+  wire([[PIN.bGND, BOT_Y], [PIN.bGND, 705], [1100, 705], [1100, RAIL_N], [colX(36), RAIL_N]], BLACK);
+  label(660, 733, '5V  →  riel rojo (+)', { size: 10, fill: '#a11d1d', mono: true });
+  label(880, 733, 'GND  →  riel azul (−)', { size: 10, fill: '#1b1b1b', mono: true });
+
+  // OLED: pines en fila a, columnas 2..5 = SDA SCL GND VCC
+  wire([[colX(2), ROW.b], [455, ROW.b], [455, 300], [PIN.t3, 300], [PIN.t3, TOP_Y]], '#12a08a');   // SDA -> D3
+  wire([[colX(3), ROW.c], [442, ROW.c], [442, 314], [PIN.t2, 314], [PIN.t2, TOP_Y]], '#8a5a3c');   // SCL -> D2
+  wire([[colX(4), ROW.e], [colX(4), RAIL_N]], BLACK);
+  wire([[colX(5), ROW.e], [colX(5), RAIL_P]], RED);
+  label(322, 297, 'SDA → D3', { size: 10, fill: '#0b6f60', mono: true, anchor: 'end' });
+  label(322, 311, 'SCL → D2', { size: 10, fill: '#5f3d27', mono: true, anchor: 'end' });
+
+  // Sensores flex (de izquierda a derecha: meñique ... pulgar)
+  const DEDOS = [
+    { n: 'MEÑIQUE', pin: 'A4', color: '#8e44ad' },
+    { n: 'ANULAR', pin: 'A3', color: '#2f7fd1' },
+    { n: 'MEDIO', pin: 'A2', color: '#2e9e52' },
+    { n: 'ÍNDICE', pin: 'A1', color: '#e6c200' },
+    { n: 'PULGAR', pin: 'A0', color: '#e67e22' }
+  ];
+  DEDOS.forEach((d, s) => {
+    const L = 9 + 6 * s, xL = colX(L), xR = colX(L + 1), xS = colX(L + 2), yRun = 642 + 12 * s;
+    wire([[xL, RAIL_P], [xL, ROW.d]], RED);                                             // pata 1 -> 5V
+    wire([[xR, ROW.i], [xR, RAIL_N]], BLACK);                                           // resistencia -> GND
+    wire([[PIN['b' + d.pin], BOT_Y], [PIN['b' + d.pin], yRun], [xS, yRun], [xS, ROW.c], [xR, ROW.c]], d.color); // señal
+    // resistencia 10k cruzando el canal
+    el('line', { x1: xR, y1: ROW.d, x2: xR, y2: ROW.g, stroke: '#9aa0a3', 'stroke-width': 2 });
+    el('rect', { x: xR - 5, y: 455, width: 10, height: 34, rx: 4, fill: '#e2c594', stroke: '#a88a55' });
+    [['#7a4a1e', 460], ['#111', 467], ['#e67e22', 474], ['#c9a227', 482]].forEach(b => el('rect', { x: xR - 5, y: b[1], width: 10, height: 3, fill: b[0] }));
+    // sensor flex
+    const xc = (xL + xR) / 2;
+    el('line', { x1: xL, y1: 376, x2: xL, y2: ROW.a, stroke: '#9aa0a3', 'stroke-width': 2.5 });
+    el('line', { x1: xR, y1: 376, x2: xR, y2: ROW.a, stroke: '#9aa0a3', 'stroke-width': 2.5 });
+    el('rect', { x: xc - 13, y: 118, width: 26, height: 250, rx: 5, fill: '#d6a04a', stroke: '#9c6f25' });
+    el('rect', { x: xc - 7, y: 128, width: 14, height: 216, rx: 2, fill: '#2a2623' });
+    for (let y = 136; y < 340; y += 12) el('rect', { x: xc - 7, y: y, width: 14, height: 3, fill: '#c9cfd2' });
+    el('rect', { x: xc - 13, y: 362, width: 26, height: 16, rx: 2, fill: '#ececec', stroke: '#9a9a9a' });
+    label(xc, 92, d.n, { size: 12, weight: 700 });
+    label(xc, 108, d.pin, { size: 10, fill: '#557078', mono: true });
+    el('rect', { x: xc - 16, y: 70, width: 32, height: 5, rx: 2.5, fill: d.color });
+  });
+  label(colX(22), 50, 'SENSORES FLEX  ·  uno por dedo, cosidos al guante', { size: 11, fill: '#557078', mono: true });
+  label(colX(9) - 9, 475, '10 kΩ', { size: 8, fill: '#557078', mono: true, anchor: 'end' });
+
+  // ---------- OLED (sobre la protoboard, pines en fila a) ----------
+  const ox = 486, oy = 262;
+  [2, 3, 4, 5].forEach(c => el('line', { x1: colX(c), y1: 376, x2: colX(c), y2: ROW.a, stroke: '#c9a227', 'stroke-width': 2.5 }));
+  el('rect', { x: ox, y: oy, width: 120, height: 120, rx: 6, fill: '#1d4e9e', stroke: '#12346b', 'stroke-width': 1.5 });
+  [[ox + 9, oy + 9], [ox + 111, oy + 9]].forEach(p => el('circle', { cx: p[0], cy: p[1], r: 4.5, fill: '#e6edef', stroke: '#c9a227', 'stroke-width': 1.5 }));
+  el('rect', { x: ox + 8, y: oy + 22, width: 104, height: 62, rx: 2, fill: '#05070a' });
+  label(ox + 60, oy + 35, 'DEDO LEVANTADO', { size: 8.5, fill: '#ffd60a', mono: true });
+  label(ox + 60, oy + 58, 'ÍNDICE', { size: 17, weight: 700, fill: '#5ec8ff' });
+  [0, 1, 2, 3, 4].forEach(i => { const h = i === 1 ? 14 : 4; el('rect', { x: ox + 20 + i * 18, y: oy + 80 - h, width: 12, height: h, fill: '#5ec8ff' }); });
+  ['SDA', 'SCL', 'GND', 'VCC'].forEach((n, i) => {
+    el('rect', { x: colX(2 + i) - 4, y: oy + 106, width: 8, height: 8, fill: '#141414', stroke: '#c9a227' });
+    label(colX(2 + i), oy + 101, n, { size: 6.5, fill: '#ffffff', mono: true });
+  });
+  label(ox + 60, oy - 10, 'OLED SSD1306 · 128x64', { size: 11, fill: '#557078', mono: true });
+
+  // ---------- Copiar ----------
+  const btn = document.getElementById('copiar'), pre = document.getElementById('codigo');
+  btn.addEventListener('click', function () {
+    const done = () => { btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = 'Copiar código', 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Seleccionado: Ctrl+C'; };
+    try { navigator.clipboard.writeText(pre.textContent).then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+</script>
