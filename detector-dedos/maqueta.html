@@ -61,15 +61,15 @@ pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; pa
 
 <div class="page">
   <header>
-    <p class="eyebrow">Arduino Uno · OLED SSD1306 · 5 sensores flex</p>
+    <p class="eyebrow">Cámara + Python · Arduino Uno · OLED SSD1306 · 5 LEDs</p>
     <h1>Detector de Dedos</h1>
-    <p>Un guante con un sensor flex por dedo. El Arduino lee cuánto se dobla cada uno y la pantalla OLED muestra el nombre del dedo que está levantado.</p>
+    <p>La cámara del computador ve tu mano. Python detecta qué dedos están levantados y se lo avisa al Arduino por el cable USB. El Arduino enciende un LED por dedo y muestra el nombre en la pantalla OLED.</p>
   </header>
 
   <section>
     <h2>Maqueta</h2>
-    <div class="board"><svg id="maqueta" viewBox="0 0 1130 740" role="img" aria-label="Diagrama de conexiones: Arduino Uno, protoboard con pantalla OLED y cinco sensores flex con sus resistencias"></svg></div>
-    <p class="hint">En la protoboard, los 5 agujeros de cada columna están unidos entre sí (arriba y abajo del canal por separado). Los rieles rojo y azul recorren todo el largo.</p>
+    <div class="board"><svg id="maqueta" viewBox="0 168 1130 512" role="img" aria-label="Diagrama de conexiones: Arduino Uno, protoboard con pantalla OLED y cinco LEDs con sus resistencias"></svg></div>
+    <p class="hint">En la protoboard, los 5 agujeros de cada columna están unidos entre sí (arriba y abajo del canal por separado). Los rieles rojo y azul recorren todo el largo. La detección de la mano ocurre en el computador: el único cable hacia él es el USB.</p>
   </section>
 
   <div class="cols">
@@ -79,21 +79,19 @@ pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; pa
       <table>
         <thead><tr><th>Desde</th><th>Hasta</th><th>Pin Uno</th></tr></thead>
         <tbody>
-          <tr><td><span class="sw" style="background:#d62828"></span>Riel rojo (+)</td><td>Alimentación</td><td class="pin">5V</td></tr>
-          <tr><td><span class="sw" style="background:#1b1b1b"></span>Riel azul (−)</td><td>Tierra</td><td class="pin">GND</td></tr>
-          <tr><td><span class="sw" style="background:#e67e22"></span>Flex pulgar</td><td>Unión sensor + resistencia</td><td class="pin">A0</td></tr>
-          <tr><td><span class="sw" style="background:#e6c200"></span>Flex índice</td><td>Unión sensor + resistencia</td><td class="pin">A1</td></tr>
-          <tr><td><span class="sw" style="background:#2e9e52"></span>Flex medio</td><td>Unión sensor + resistencia</td><td class="pin">A2</td></tr>
-          <tr><td><span class="sw" style="background:#2f7fd1"></span>Flex anular</td><td>Unión sensor + resistencia</td><td class="pin">A3</td></tr>
-          <tr><td><span class="sw" style="background:#8e44ad"></span>Flex meñique</td><td>Unión sensor + resistencia</td><td class="pin">A4</td></tr>
-          <tr><td><span class="sw" style="background:#12a08a"></span>OLED SDA</td><td>Datos I2C</td><td class="pin">D3</td></tr>
-          <tr><td><span class="sw" style="background:#8a5a3c"></span>OLED SCL</td><td>Reloj I2C</td><td class="pin">D2</td></tr>
+          <tr><td><span class="sw" style="background:#e67e22"></span>LED pulgar</td><td>Pata larga del LED</td><td class="pin">D2</td></tr>
+          <tr><td><span class="sw" style="background:#e6c200"></span>LED índice</td><td>Pata larga del LED</td><td class="pin">D3</td></tr>
+          <tr><td><span class="sw" style="background:#2e9e52"></span>LED medio</td><td>Pata larga del LED</td><td class="pin">D4</td></tr>
+          <tr><td><span class="sw" style="background:#2f7fd1"></span>LED anular</td><td>Pata larga del LED</td><td class="pin">D5</td></tr>
+          <tr><td><span class="sw" style="background:#8e44ad"></span>LED meñique</td><td>Pata larga del LED</td><td class="pin">D6</td></tr>
+          <tr><td><span class="sw" style="background:#12a08a"></span>OLED SDA</td><td>Datos I2C</td><td class="pin">A4</td></tr>
+          <tr><td><span class="sw" style="background:#8a5a3c"></span>OLED SCL</td><td>Reloj I2C</td><td class="pin">A5</td></tr>
           <tr><td><span class="sw" style="background:#d62828"></span>OLED VCC</td><td>Riel rojo (+)</td><td class="pin">5V</td></tr>
-          <tr><td><span class="sw" style="background:#1b1b1b"></span>OLED GND</td><td>Riel azul (−)</td><td class="pin">GND</td></tr>
+          <tr><td><span class="sw" style="background:#1b1b1b"></span>OLED GND y resistencias</td><td>Riel azul (−)</td><td class="pin">GND</td></tr>
         </tbody>
       </table>
       </div>
-      <p class="note">Cada sensor flex lleva tres cosas: una pata al riel rojo, la otra pata al pin analógico, y desde esa misma columna una resistencia de 10 kΩ al riel azul.</p>
+      <p class="note">Cada LED lleva tres cosas: la pata larga al pin digital, la pata corta a una resistencia de 220 Ω, y la otra punta de la resistencia al riel azul. Si un LED no enciende, lo más probable es que esté al revés.</p>
     </section>
 
     <section>
@@ -101,23 +99,23 @@ pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; pa
       <ul>
         <li>Arduino Uno con cable USB</li>
         <li>Pantalla OLED SSD1306 128x64 I2C (la que ya compraste)</li>
-        <li>5 sensores flex de 2,2"</li>
-        <li>5 resistencias de 10 kΩ (café, negro, naranja)</li>
+        <li>5 LEDs de 5 mm, del color que tengas</li>
+        <li>5 resistencias de 220 Ω (rojo, rojo, café)</li>
         <li>Protoboard de 830 puntos</li>
-        <li>Unos 20 cables dupont macho-macho</li>
-        <li>Un guante y cinta o hilo para fijar los sensores</li>
+        <li>Unos 15 cables dupont macho-macho</li>
+        <li>Computador con cámara web y Python 3</li>
       </ul>
-      <p class="note">La OLED usa D2 y D3 en vez de A4 y A5, porque A4 lo ocupa el meñique. El código maneja el I2C por software con la librería U8g2.</p>
+      <p class="note">Ya no hacen falta sensores flex ni guante. La OLED vuelve a los pines I2C normales del Uno, A4 y A5.</p>
     </section>
 
     <section>
       <h2>Puesta en marcha</h2>
       <ol>
-        <li>En el Arduino IDE abre <code>Herramientas → Administrar bibliotecas</code> e instala <code>U8g2</code>.</li>
-        <li>Arma el circuito con el Arduino desconectado del USB.</li>
-        <li>Sube el sketch <code>detector_dedos.ino</code>.</li>
-        <li>Cuando la pantalla diga ABRE, deja la mano abierta. Cuando diga CIERRA, haz un puño. Así se calibra solo.</li>
-        <li>Levanta un dedo: la pantalla muestra su nombre. Con RESET se calibra de nuevo.</li>
+        <li>En el Arduino IDE instala la biblioteca <code>U8g2</code> y sube <code>detector_dedos.ino</code>. Los LEDs parpadean uno por uno al arrancar.</li>
+        <li>Cierra el Monitor Serie del Arduino IDE: el puerto solo lo puede usar un programa a la vez.</li>
+        <li>En una terminal instala las librerías: <code>pip install opencv-python mediapipe pyserial</code></li>
+        <li>Ejecuta <code>python detector_dedos.py</code>. Si no encuentra el Arduino, indícale el puerto: <code>--puerto COM3</code></li>
+        <li>Muestra tu mano a la cámara y levanta un dedo. Con la tecla Q se cierra.</li>
       </ol>
       <p class="note">Mira las letras impresas en tu OLED antes de cablear: algunos módulos traen VCC y GND en el orden contrario. Si el texto sale de cabeza, cambia <code>U8G2_R2</code> por <code>U8G2_R0</code> en el código.</p>
     </section>
@@ -125,127 +123,84 @@ pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; pa
 
   <section>
     <div class="codehead">
-      <h2>Código</h2>
-      <button id="copiar" type="button">Copiar código</button>
+      <h2>Código del Arduino</h2>
+      <button class="copiar" data-de="codigo-ino" type="button">Copiar código</button>
     </div>
-    <pre id="codigo" tabindex="0">/*
-  DETECTOR DE DEDOS - Arduino Uno + OLED SSD1306 128x64 (I2C)
-  ------------------------------------------------------------
-  Un sensor flex por dedo. La pantalla muestra el nombre del dedo levantado.
+    <pre id="codigo-ino" tabindex="0">/*
+  DETECTOR DE DEDOS - Arduino Uno + OLED SSD1306 128x64 + 5 LEDs
+  ---------------------------------------------------------------
+  La camara y Python (OpenCV) detectan que dedos estan levantados y se lo
+  mandan al Arduino por el cable USB. El Arduino enciende un LED por dedo
+  y muestra el nombre en la pantalla.
 
   Libreria necesaria: &quot;U8g2&quot; de oliver
   (Arduino IDE &gt; Herramientas &gt; Administrar bibliotecas &gt; buscar U8g2)
 
   CONEXIONES
-    Sensor flex pulgar   -&gt; A0
-    Sensor flex indice   -&gt; A1
-    Sensor flex medio    -&gt; A2
-    Sensor flex anular   -&gt; A3
-    Sensor flex menique  -&gt; A4
-    (cada sensor: una pata a 5V, la otra a su pin analogico
-     y a una resistencia de 10k que va a GND)
+    LED pulgar   -&gt; D2
+    LED indice   -&gt; D3
+    LED medio    -&gt; D4
+    LED anular   -&gt; D5
+    LED menique  -&gt; D6
+    (pata larga del LED al pin; pata corta a una resistencia de 220 ohm
+     que va a GND)
 
     OLED VCC -&gt; 5V
     OLED GND -&gt; GND
-    OLED SCL -&gt; D2
-    OLED SDA -&gt; D3
-    (la OLED va por I2C por software porque A4 lo usa el menique)
+    OLED SDA -&gt; A4
+    OLED SCL -&gt; A5
+
+  MENSAJES QUE LLEGAN DESDE PYTHON (9600 baudios, terminados en salto de linea)
+    &quot;01000&quot;  cinco caracteres, uno por dedo (pulgar..menique): 1 = levantado
+    &quot;N&quot;      no se ve ninguna mano
 */
 
 #include &lt;Arduino.h&gt;
+#include &lt;Wire.h&gt;
 #include &lt;U8g2lib.h&gt;
-
-// ---------- Pantalla ----------
-const uint8_t PIN_SCL = 2;
-const uint8_t PIN_SDA = 3;
 
 // U8G2_R2 = imagen girada 180 grados (la OLED va con los pines hacia abajo
 // en la protoboard). Si el texto te sale de cabeza, cambia U8G2_R2 por U8G2_R0.
-U8G2_SSD1306_128X64_NONAME_1_SW_I2C oled(U8G2_R2, PIN_SCL, PIN_SDA, U8X8_PIN_NONE);
+U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R2, U8X8_PIN_NONE);
 
-// ---------- Dedos ----------
 const uint8_t NUM_DEDOS = 5;
-const uint8_t PIN_DEDO[NUM_DEDOS] = {A0, A1, A2, A3, A4};
+const uint8_t PIN_LED[NUM_DEDOS] = {2, 3, 4, 5, 6};
 const char *const NOMBRE[NUM_DEDOS] = {&quot;PULGAR&quot;, &quot;ÍNDICE&quot;, &quot;MEDIO&quot;, &quot;ANULAR&quot;, &quot;MEÑIQUE&quot;};
 
-// Un dedo pasa a &quot;levantado&quot; sobre 60% y a &quot;doblado&quot; bajo 40%.
-// La zona intermedia evita que el nombre parpadee.
-const int UMBRAL_SUBE = 60;
-const int UMBRAL_BAJA = 40;
+// Si Python deja de hablar por este tiempo, se apagan los LEDs
+const unsigned long TIEMPO_SIN_DATOS = 3000;
 
-int valorAbierto[NUM_DEDOS];   // lectura con el dedo estirado
-int valorCerrado[NUM_DEDOS];   // lectura con el dedo doblado
 bool levantado[NUM_DEDOS];
-bool levantadoAntes[NUM_DEDOS];
+bool hayMano = false;
+bool conectado = false;
+unsigned long ultimoMensaje = 0;
 
-// Promedia varias lecturas para quitar ruido
-int leerDedo(uint8_t i) {
-  long suma = 0;
-  for (uint8_t n = 0; n &lt; 8; n++) {
-    suma += analogRead(PIN_DEDO[i]);
-  }
-  return suma / 8;
-}
+char linea[8];
+uint8_t largo = 0;
 
-// 0 = dedo doblado, 100 = dedo estirado
-int porcentaje(uint8_t i) {
-  int rango = valorAbierto[i] - valorCerrado[i];
-  if (abs(rango) &lt; 15) {
-    return 0;   // sensor desconectado o mal calibrado
-  }
-  long p = (long)(leerDedo(i) - valorCerrado[i]) * 100L / rango;
-  return constrain(p, 0, 100);
-}
-
-// Dibuja la pantalla: titulo en la franja amarilla, texto grande en la azul
+// Titulo en la franja amarilla, texto grande en la azul
 // y abajo una barra por dedo (alta = levantado).
-void dibujar(const char *titulo, const char *texto, bool conBarras) {
+void dibujar(const char *titulo, const char *texto) {
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_6x12_tf);
     oled.drawUTF8((128 - oled.getUTF8Width(titulo)) / 2, 12, titulo);
 
     oled.setFont(u8g2_font_helvB14_tf);
-    oled.drawUTF8((128 - oled.getUTF8Width(texto)) / 2, conBarras ? 38 : 46, texto);
+    oled.drawUTF8((128 - oled.getUTF8Width(texto)) / 2, 38, texto);
 
-    if (conBarras) {
-      for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
-        uint8_t alto = levantado[i] ? 18 : 4;
-        oled.drawBox(8 + i * 24, 64 - alto, 16, alto);
-      }
+    for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+      uint8_t alto = levantado[i] ? 18 : 4;
+      oled.drawBox(8 + i * 24, 64 - alto, 16, alto);
     }
   } while (oled.nextPage());
-}
-
-// Muestra una instruccion, espera y guarda la lectura de cada dedo
-void medir(const char *instruccion, int destino[]) {
-  dibujar(&quot;CALIBRANDO&quot;, instruccion, false);
-  delay(2500);
-  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
-    destino[i] = leerDedo(i);
-  }
-}
-
-void calibrar() {
-  medir(&quot;ABRE&quot;, valorAbierto);     // mano abierta, dedos estirados
-  medir(&quot;CIERRA&quot;, valorCerrado);   // puno cerrado
-  dibujar(&quot;CALIBRANDO&quot;, &quot;LISTO&quot;, false);
-  delay(800);
-
-  Serial.println(F(&quot;Calibracion (abierto / cerrado):&quot;));
-  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
-    Serial.print(NOMBRE[i]);
-    Serial.print(F(&quot;: &quot;));
-    Serial.print(valorAbierto[i]);
-    Serial.print(F(&quot; / &quot;));
-    Serial.println(valorCerrado[i]);
-  }
 }
 
 void mostrarEstado() {
   uint8_t cuantos = 0;
   uint8_t ultimo = 0;
   for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    digitalWrite(PIN_LED[i], levantado[i] ? HIGH : LOW);
     if (levantado[i]) {
       cuantos++;
       ultimo = i;
@@ -253,57 +208,342 @@ void mostrarEstado() {
   }
 
   char texto[12];
-  if (cuantos == 0) {
-    dibujar(&quot;NINGUN DEDO&quot;, &quot;PUÑO&quot;, true);
+  if (!conectado) {
+    dibujar(&quot;ESPERANDO A PYTHON&quot;, &quot;SIN DATOS&quot;);
+  } else if (!hayMano) {
+    dibujar(&quot;MUESTRA TU MANO&quot;, &quot;SIN MANO&quot;);
+  } else if (cuantos == 0) {
+    dibujar(&quot;NINGUN DEDO&quot;, &quot;PUÑO&quot;);
   } else if (cuantos == 1) {
-    dibujar(&quot;DEDO LEVANTADO&quot;, NOMBRE[ultimo], true);
+    dibujar(&quot;DEDO LEVANTADO&quot;, NOMBRE[ultimo]);
   } else if (cuantos == NUM_DEDOS) {
-    dibujar(&quot;DEDOS LEVANTADOS&quot;, &quot;TODOS&quot;, true);
+    dibujar(&quot;DEDOS LEVANTADOS&quot;, &quot;TODOS&quot;);
   } else {
     snprintf(texto, sizeof(texto), &quot;%u DEDOS&quot;, cuantos);
-    dibujar(&quot;DEDOS LEVANTADOS&quot;, texto, true);
+    dibujar(&quot;DEDOS LEVANTADOS&quot;, texto);
+  }
+}
+
+void apagarTodo() {
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    levantado[i] = false;
+  }
+}
+
+// Interpreta una linea completa. Devuelve true si cambio algo.
+bool procesarLinea() {
+  bool nuevo[NUM_DEDOS] = {false, false, false, false, false};
+  bool nuevaMano;
+
+  if (largo == 1 &amp;&amp; linea[0] == &#x27;N&#x27;) {
+    nuevaMano = false;
+  } else if (largo == NUM_DEDOS) {
+    for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+      if (linea[i] != &#x27;0&#x27; &amp;&amp; linea[i] != &#x27;1&#x27;) {
+        return false;   // linea con basura: se ignora
+      }
+      nuevo[i] = (linea[i] == &#x27;1&#x27;);
+    }
+    nuevaMano = true;
+  } else {
+    return false;
   }
 
-  // Lo mismo por el monitor serie (9600 baudios)
-  Serial.print(F(&quot;Levantados:&quot;));
+  ultimoMensaje = millis();
+  bool cambio = !conectado || (nuevaMano != hayMano);
   for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
-    if (levantado[i]) {
-      Serial.print(&#x27; &#x27;);
-      Serial.print(NOMBRE[i]);
+    if (nuevo[i] != levantado[i]) {
+      cambio = true;
     }
+    levantado[i] = nuevo[i];
   }
-  Serial.println();
+  hayMano = nuevaMano;
+  conectado = true;
+  return cambio;
 }
 
 void setup() {
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    pinMode(PIN_LED[i], OUTPUT);
+  }
   Serial.begin(9600);
   oled.begin();
-  calibrar();   // para calibrar de nuevo, presiona RESET en el Arduino
+
+  // Prueba de LEDs: se encienden uno por uno al arrancar
+  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
+    digitalWrite(PIN_LED[i], HIGH);
+    delay(120);
+    digitalWrite(PIN_LED[i], LOW);
+  }
   mostrarEstado();
 }
 
 void loop() {
   bool cambio = false;
 
-  for (uint8_t i = 0; i &lt; NUM_DEDOS; i++) {
-    int p = porcentaje(i);
-    if (p &gt;= UMBRAL_SUBE) {
-      levantado[i] = true;
-    } else if (p &lt;= UMBRAL_BAJA) {
-      levantado[i] = false;
-    }
-    if (levantado[i] != levantadoAntes[i]) {
-      levantadoAntes[i] = levantado[i];
-      cambio = true;
+  while (Serial.available() &gt; 0) {
+    char c = Serial.read();
+    if (c == &#x27;\n&#x27;) {
+      if (procesarLinea()) {
+        cambio = true;
+      }
+      largo = 0;
+    } else if (c != &#x27;\r&#x27;) {
+      if (largo &lt; sizeof(linea) - 1) {
+        linea[largo] = c;
+      }
+      if (largo &lt; 255) {
+        largo++;   // una linea demasiado larga queda con largo invalido y se ignora
+      }
     }
   }
 
-  // Solo redibuja cuando algo cambia: la pantalla por software es lenta
+  if (conectado &amp;&amp; millis() - ultimoMensaje &gt; TIEMPO_SIN_DATOS) {
+    conectado = false;
+    hayMano = false;
+    apagarTodo();
+    cambio = true;
+  }
+
+  // Solo redibuja cuando algo cambia
   if (cambio) {
     mostrarEstado();
   }
-  delay(30);
 }
+</pre>
+  </section>
+
+  <section>
+    <div class="codehead">
+      <h2>Código de Python</h2>
+      <button class="copiar" data-de="codigo-py" type="button">Copiar código</button>
+    </div>
+    <pre id="codigo-py" tabindex="0">&quot;&quot;&quot;
+DETECTOR DE DEDOS - parte de Python
+
+Lee la camara con OpenCV, detecta la mano con MediaPipe y le manda al Arduino
+que dedos estan levantados. El Arduino enciende un LED por dedo y muestra el
+nombre en la pantalla OLED.
+
+La primera vez descarga el modelo de la mano (hand_landmarker.task, 8 MB)
+y lo guarda junto a este archivo, asi que necesita internet esa vez.
+
+Instalar:   pip install -r requirements.txt
+Ejecutar:   python detector_dedos.py
+            python detector_dedos.py --puerto COM3      (Windows)
+            python detector_dedos.py --puerto /dev/ttyACM0   (Linux)
+Salir:      tecla Q sobre la ventana de video
+
+IMPORTANTE: cierra el Monitor Serie del Arduino IDE antes de ejecutar,
+porque el puerto solo puede usarlo un programa a la vez.
+&quot;&quot;&quot;
+
+import argparse
+import math
+import time
+import urllib.request
+from pathlib import Path
+
+import cv2
+import mediapipe as mp
+import serial
+from serial.tools import list_ports
+
+NOMBRES = [&quot;PULGAR&quot;, &quot;INDICE&quot;, &quot;MEDIO&quot;, &quot;ANULAR&quot;, &quot;MENIQUE&quot;]
+BAUDIOS = 9600
+CUADROS_ESTABLES = 3      # el estado debe repetirse estos cuadros antes de enviarse
+SEGUNDOS_REENVIO = 1.0    # se reenvia cada segundo para que el Arduino sepa que seguimos aqui
+
+MODELO = Path(__file__).with_name(&quot;hand_landmarker.task&quot;)
+URL_MODELO = (
+    &quot;https://storage.googleapis.com/mediapipe-models/hand_landmarker/&quot;
+    &quot;hand_landmarker/float16/1/hand_landmarker.task&quot;
+)
+
+# Lineas que unen los 21 puntos de la mano (para dibujarla sobre el video)
+HUESOS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),
+    (0, 5), (5, 6), (6, 7), (7, 8),
+    (5, 9), (9, 10), (10, 11), (11, 12),
+    (9, 13), (13, 14), (14, 15), (15, 16),
+    (13, 17), (17, 18), (18, 19), (19, 20), (0, 17),
+]
+
+# Puntos de la mano segun MediaPipe
+MUNECA = 0
+PULGAR_NUDILLO, PULGAR_PUNTA = 3, 4
+BASE_MENIQUE = 17
+# (punta, articulacion media) de indice, medio, anular y menique
+DEDOS_LARGOS = [(8, 6), (12, 10), (16, 14), (20, 18)]
+
+
+def distancia(a, b):
+    return math.hypot(a.x - b.x, a.y - b.y)
+
+
+def dedos_levantados(puntos):
+    &quot;&quot;&quot;Devuelve 5 valores True/False: pulgar, indice, medio, anular, menique.
+
+    Compara distancias en vez de alturas, asi funciona aunque la mano
+    este inclinada y con cualquiera de las dos manos.
+    &quot;&quot;&quot;
+    muneca = puntos[MUNECA]
+    base_menique = puntos[BASE_MENIQUE]
+
+    # Pulgar: estirado si la punta se aleja del borde opuesto de la palma
+    estado = [
+        distancia(puntos[PULGAR_PUNTA], base_menique)
+        &gt; distancia(puntos[PULGAR_NUDILLO], base_menique)
+    ]
+    # Resto: estirado si la punta queda mas lejos de la muneca que su articulacion
+    for punta, media in DEDOS_LARGOS:
+        estado.append(distancia(puntos[punta], muneca) &gt; distancia(puntos[media], muneca))
+    return estado
+
+
+def a_mensaje(estado):
+    &quot;&quot;&quot;None = sin mano -&gt; &#x27;N&#x27;.  Lista de 5 -&gt; por ejemplo &#x27;01000&#x27;.&quot;&quot;&quot;
+    if estado is None:
+        return &quot;N&quot;
+    return &quot;&quot;.join(&quot;1&quot; if e else &quot;0&quot; for e in estado)
+
+
+def crear_detector():
+    if not MODELO.exists():
+        print(&quot;Descargando el modelo de la mano (solo la primera vez)...&quot;)
+        urllib.request.urlretrieve(URL_MODELO, MODELO)
+    vision = mp.tasks.vision
+    opciones = vision.HandLandmarkerOptions(
+        base_options=mp.tasks.BaseOptions(model_asset_path=str(MODELO)),
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=1,
+        min_hand_detection_confidence=0.6,
+        min_tracking_confidence=0.6,
+    )
+    return vision.HandLandmarker.create_from_options(opciones)
+
+
+def dibujar_mano(cuadro, puntos):
+    alto, ancho = cuadro.shape[:2]
+    pix = [(int(p.x * ancho), int(p.y * alto)) for p in puntos]
+    for a, b in HUESOS:
+        cv2.line(cuadro, pix[a], pix[b], (255, 255, 255), 2)
+    for punto in pix:
+        cv2.circle(cuadro, punto, 4, (0, 200, 255), -1)
+
+
+def buscar_puerto():
+    &quot;&quot;&quot;Busca un puerto que parezca un Arduino.&quot;&quot;&quot;
+    pistas = (&quot;arduino&quot;, &quot;ch340&quot;, &quot;usb serial&quot;, &quot;usb-serial&quot;, &quot;ttyacm&quot;, &quot;ttyusb&quot;, &quot;usbmodem&quot;)
+    for p in list_ports.comports():
+        texto = f&quot;{p.device} {p.description} {p.manufacturer or &#x27;&#x27;}&quot;.lower()
+        if any(pista in texto for pista in pistas):
+            return p.device
+    return None
+
+
+def abrir_arduino(puerto):
+    puerto = puerto or buscar_puerto()
+    if puerto is None:
+        print(&quot;No encontre el Arduino. Sigo solo con la camara.&quot;)
+        print(&quot;Puertos disponibles:&quot;, [p.device for p in list_ports.comports()] or &quot;ninguno&quot;)
+        print(&quot;Puedes indicarlo con:  --puerto COM3&quot;)
+        return None
+    try:
+        arduino = serial.Serial(puerto, BAUDIOS, timeout=0, write_timeout=1)
+    except serial.SerialException as error:
+        print(f&quot;No pude abrir {puerto}: {error}&quot;)
+        print(&quot;Revisa que el Monitor Serie del Arduino IDE este cerrado. Sigo solo con la camara.&quot;)
+        return None
+    print(f&quot;Arduino conectado en {puerto}. Esperando a que reinicie...&quot;)
+    time.sleep(2)   # el Uno se reinicia cuando se abre el puerto
+    return arduino
+
+
+def main():
+    parser = argparse.ArgumentParser(description=&quot;Detecta dedos levantados y avisa al Arduino&quot;)
+    parser.add_argument(&quot;--puerto&quot;, help=&quot;puerto serie del Arduino (ej: COM3 o /dev/ttyACM0)&quot;)
+    parser.add_argument(&quot;--camara&quot;, type=int, default=0, help=&quot;numero de camara (0 = la principal)&quot;)
+    args = parser.parse_args()
+
+    arduino = abrir_arduino(args.puerto)
+
+    camara = cv2.VideoCapture(args.camara)
+    if not camara.isOpened():
+        raise SystemExit(f&quot;No pude abrir la camara {args.camara}. Prueba con --camara 1&quot;)
+
+    detector = crear_detector()
+    inicio = time.monotonic()
+
+    candidato, repeticiones = None, 0
+    enviado, ultimo_envio = None, 0.0
+
+    try:
+        while True:
+            ok, cuadro = camara.read()
+            if not ok:
+                print(&quot;La camara dejo de entregar imagen.&quot;)
+                break
+
+            cuadro = cv2.flip(cuadro, 1)   # efecto espejo
+            imagen = mp.Image(
+                image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(cuadro, cv2.COLOR_BGR2RGB)
+            )
+            milisegundos = int((time.monotonic() - inicio) * 1000)
+            resultado = detector.detect_for_video(imagen, milisegundos)
+
+            estado = None
+            if resultado.hand_landmarks:
+                puntos = resultado.hand_landmarks[0]
+                dibujar_mano(cuadro, puntos)
+                estado = dedos_levantados(puntos)
+
+            # Filtro: el mensaje debe repetirse unos cuadros para evitar parpadeos
+            mensaje = a_mensaje(estado)
+            if mensaje == candidato:
+                repeticiones += 1
+            else:
+                candidato, repeticiones = mensaje, 1
+
+            ahora = time.time()
+            estable = repeticiones &gt;= CUADROS_ESTABLES
+            if estable and (candidato != enviado or ahora - ultimo_envio &gt; SEGUNDOS_REENVIO):
+                if candidato != enviado:
+                    print(&quot;Enviado:&quot;, candidato)
+                enviado, ultimo_envio = candidato, ahora
+                if arduino is not None:
+                    try:
+                        arduino.write((candidato + &quot;\n&quot;).encode(&quot;ascii&quot;))
+                    except serial.SerialException as error:
+                        print(f&quot;Se perdio la conexion con el Arduino: {error}&quot;)
+                        arduino = None
+
+            # Texto sobre el video
+            if estado is None:
+                texto = &quot;Sin mano&quot;
+            else:
+                arriba = [NOMBRES[i] for i, e in enumerate(estado) if e]
+                texto = &quot;, &quot;.join(arriba) if arriba else &quot;Puno&quot;
+            cv2.putText(cuadro, texto, (12, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 5)
+            cv2.putText(cuadro, texto, (12, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+
+            cv2.imshow(&quot;Detector de dedos (Q para salir)&quot;, cuadro)
+            if cv2.waitKey(1) &amp; 0xFF in (ord(&quot;q&quot;), ord(&quot;Q&quot;)):
+                break
+    finally:
+        camara.release()
+        cv2.destroyAllWindows()
+        detector.close()
+        if arduino is not None:
+            try:
+                arduino.write(b&quot;N\n&quot;)
+                arduino.close()
+            except serial.SerialException:
+                pass
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
 </pre>
   </section>
 </div>
@@ -330,7 +570,7 @@ void loop() {
   // ---------- Geometría ----------
   const colX = c => 490 + 16 * c;
   const ROW = { a: 392, b: 408, c: 424, d: 440, e: 456, f: 488, g: 504, h: 520, i: 536, j: 552 };
-  const RAIL_P = 588, RAIL_N = 606;
+  const RAIL_P = 606, RAIL_N = 588;
   const TOP_Y = 344, BOT_Y = 546;
   const PIN = {};
   ['SCL', 'SDA', 'AREF', 'GND', '13', '12', '11', '10', '9', '8'].forEach((n, i) => PIN['t' + n] = 130 + 14 * i);
@@ -363,8 +603,8 @@ void loop() {
   // ---------- Protoboard ----------
   el('rect', { x: 470, y: 372, width: 616, height: 254, rx: 8, fill: '#f6f5f0', stroke: '#b9b7ad', 'stroke-width': 2 });
   el('rect', { x: 476, y: 466, width: 604, height: 12, fill: '#dddbd2' });                                  // canal
-  el('line', { x1: 484, y1: RAIL_P - 9, x2: 1072, y2: RAIL_P - 9, stroke: '#d62828', 'stroke-width': 1.5 });
-  el('line', { x1: 484, y1: RAIL_N + 9, x2: 1072, y2: RAIL_N + 9, stroke: '#2f5fd1', 'stroke-width': 1.5 });
+  el('line', { x1: 484, y1: RAIL_P + 9, x2: 1072, y2: RAIL_P + 9, stroke: '#d62828', 'stroke-width': 1.5 });
+  el('line', { x1: 484, y1: RAIL_N - 9, x2: 1072, y2: RAIL_N - 9, stroke: '#2f5fd1', 'stroke-width': 1.5 });
   label(479, RAIL_P + 4, '+', { size: 12, fill: '#d62828', weight: 700 });
   label(479, RAIL_N + 4, '−', { size: 12, fill: '#2f5fd1', weight: 700 });
   for (let c = 0; c <= 36; c++) {
@@ -382,51 +622,46 @@ void loop() {
     [pts[0], pts[pts.length - 1]].forEach(q => el('circle', { cx: q[0], cy: q[1], r: 3.2, fill: '#d9dde0', stroke: '#333', 'stroke-width': 1 }));
   }
   const RED = '#d62828', BLACK = '#1b1b1b';
-  // Alimentación: 5V y GND rodean por abajo y entran a los rieles por la derecha
-  wire([[PIN.b5V, BOT_Y], [PIN.b5V, 718], [1113, 718], [1113, RAIL_P], [colX(36), RAIL_P]], RED);
-  wire([[PIN.bGND, BOT_Y], [PIN.bGND, 705], [1100, 705], [1100, RAIL_N], [colX(36), RAIL_N]], BLACK);
-  label(660, 733, '5V  →  riel rojo (+)', { size: 10, fill: '#a11d1d', mono: true });
-  label(880, 733, 'GND  →  riel azul (−)', { size: 10, fill: '#1b1b1b', mono: true });
+  // Alimentación: entra a los rieles por la izquierda
+  wire([[PIN.bGND, BOT_Y], [PIN.bGND, RAIL_N], [colX(0), RAIL_N]], BLACK);
+  wire([[PIN.b5V, BOT_Y], [PIN.b5V, RAIL_P], [colX(0), RAIL_P]], RED);
 
   // OLED: pines en fila a, columnas 2..5 = SDA SCL GND VCC
-  wire([[colX(2), ROW.b], [455, ROW.b], [455, 300], [PIN.t3, 300], [PIN.t3, TOP_Y]], '#12a08a');   // SDA -> D3
-  wire([[colX(3), ROW.c], [442, ROW.c], [442, 314], [PIN.t2, 314], [PIN.t2, TOP_Y]], '#8a5a3c');   // SCL -> D2
+  wire([[PIN.bA4, BOT_Y], [PIN.bA4, 577], [455, 577], [455, ROW.c], [colX(2), ROW.c]], '#12a08a');   // SDA -> A4
+  wire([[PIN.bA5, BOT_Y], [PIN.bA5, 567], [442, 567], [442, ROW.b], [colX(3), ROW.b]], '#8a5a3c');   // SCL -> A5
   wire([[colX(4), ROW.e], [colX(4), RAIL_N]], BLACK);
   wire([[colX(5), ROW.e], [colX(5), RAIL_P]], RED);
-  label(322, 297, 'SDA → D3', { size: 10, fill: '#0b6f60', mono: true, anchor: 'end' });
-  label(322, 311, 'SCL → D2', { size: 10, fill: '#5f3d27', mono: true, anchor: 'end' });
 
-  // Sensores flex (de izquierda a derecha: meñique ... pulgar)
+  // LEDs (de izquierda a derecha: pulgar ... meñique)
   const DEDOS = [
-    { n: 'MEÑIQUE', pin: 'A4', color: '#8e44ad' },
-    { n: 'ANULAR', pin: 'A3', color: '#2f7fd1' },
-    { n: 'MEDIO', pin: 'A2', color: '#2e9e52' },
-    { n: 'ÍNDICE', pin: 'A1', color: '#e6c200' },
-    { n: 'PULGAR', pin: 'A0', color: '#e67e22' }
+    { n: 'PULGAR', pin: 2, color: '#e67e22' },
+    { n: 'ÍNDICE', pin: 3, color: '#e6c200', on: true },
+    { n: 'MEDIO', pin: 4, color: '#2e9e52' },
+    { n: 'ANULAR', pin: 5, color: '#2f7fd1' },
+    { n: 'MEÑIQUE', pin: 6, color: '#8e44ad' }
   ];
   DEDOS.forEach((d, s) => {
-    const L = 9 + 6 * s, xL = colX(L), xR = colX(L + 1), xS = colX(L + 2), yRun = 642 + 12 * s;
-    wire([[xL, RAIL_P], [xL, ROW.d]], RED);                                             // pata 1 -> 5V
+    const L = 9 + 6 * s, xL = colX(L), xR = colX(L + 1), xS = colX(L - 1), yRun = 236 - 12 * s, px = PIN['t' + d.pin];
+    wire([[px, TOP_Y], [px, yRun], [xS, yRun], [xS, ROW.c], [xL, ROW.c]], d.color);     // pin -> pata larga
     wire([[xR, ROW.i], [xR, RAIL_N]], BLACK);                                           // resistencia -> GND
-    wire([[PIN['b' + d.pin], BOT_Y], [PIN['b' + d.pin], yRun], [xS, yRun], [xS, ROW.c], [xR, ROW.c]], d.color); // señal
-    // resistencia 10k cruzando el canal
+    // resistencia 220 ohm cruzando el canal
     el('line', { x1: xR, y1: ROW.d, x2: xR, y2: ROW.g, stroke: '#9aa0a3', 'stroke-width': 2 });
     el('rect', { x: xR - 5, y: 455, width: 10, height: 34, rx: 4, fill: '#e2c594', stroke: '#a88a55' });
-    [['#7a4a1e', 460], ['#111', 467], ['#e67e22', 474], ['#c9a227', 482]].forEach(b => el('rect', { x: xR - 5, y: b[1], width: 10, height: 3, fill: b[0] }));
-    // sensor flex
+    [['#d62828', 460], ['#d62828', 467], ['#7a4a1e', 474], ['#c9a227', 482]].forEach(b => el('rect', { x: xR - 5, y: b[1], width: 10, height: 3, fill: b[0] }));
+    // LED
     const xc = (xL + xR) / 2;
-    el('line', { x1: xL, y1: 376, x2: xL, y2: ROW.a, stroke: '#9aa0a3', 'stroke-width': 2.5 });
-    el('line', { x1: xR, y1: 376, x2: xR, y2: ROW.a, stroke: '#9aa0a3', 'stroke-width': 2.5 });
-    el('rect', { x: xc - 13, y: 118, width: 26, height: 250, rx: 5, fill: '#d6a04a', stroke: '#9c6f25' });
-    el('rect', { x: xc - 7, y: 128, width: 14, height: 216, rx: 2, fill: '#2a2623' });
-    for (let y = 136; y < 340; y += 12) el('rect', { x: xc - 7, y: y, width: 14, height: 3, fill: '#c9cfd2' });
-    el('rect', { x: xc - 13, y: 362, width: 26, height: 16, rx: 2, fill: '#ececec', stroke: '#9a9a9a' });
-    label(xc, 92, d.n, { size: 12, weight: 700 });
-    label(xc, 108, d.pin, { size: 10, fill: '#557078', mono: true });
-    el('rect', { x: xc - 16, y: 70, width: 32, height: 5, rx: 2.5, fill: d.color });
+    el('line', { x1: xL, y1: 366, x2: xL, y2: ROW.a, stroke: '#9aa0a3', 'stroke-width': 2.5 });
+    el('line', { x1: xR, y1: 366, x2: xR, y2: ROW.a, stroke: '#9aa0a3', 'stroke-width': 2.5 });
+    if (d.on) { el('circle', { cx: xc, cy: 350, r: 30, fill: d.color, opacity: .22 }); el('circle', { cx: xc, cy: 350, r: 21, fill: d.color, opacity: .3 }); }
+    el('path', { d: 'M' + (xc - 12) + ' 368 V350 a12 12 0 0 1 24 0 V368 Z', fill: d.color, 'fill-opacity': d.on ? 1 : .55, stroke: 'rgba(0,0,0,.45)', 'stroke-width': 1.2 });
+    el('rect', { x: xc - 14, y: 364, width: 28, height: 5, rx: 1.5, fill: d.color, stroke: 'rgba(0,0,0,.45)', 'stroke-width': 1 });
+    el('path', { d: 'M' + (xc - 6) + ' 352 a7 7 0 0 1 6 -8', fill: 'none', stroke: '#fff', 'stroke-width': 2, 'stroke-linecap': 'round', opacity: .7 });
+    label(xL - 7, 383, '+', { size: 10, weight: 700, fill: '#a11d1d' });
+    label(xc, 648, d.n, { size: 12, weight: 700 });
+    label(xc, 663, 'D' + d.pin, { size: 10, fill: '#557078', mono: true });
   });
-  label(colX(22), 50, 'SENSORES FLEX  ·  uno por dedo, cosidos al guante', { size: 11, fill: '#557078', mono: true });
-  label(colX(9) - 9, 475, '10 kΩ', { size: 8, fill: '#557078', mono: true, anchor: 'end' });
+  label(colX(9) - 9, 475, '220 Ω', { size: 8, fill: '#557078', mono: true, anchor: 'end' });
+  label(476, 656, '+ = pata larga del LED', { size: 9, fill: '#557078', mono: true, anchor: 'start' });
 
   // ---------- OLED (sobre la protoboard, pines en fila a) ----------
   const ox = 486, oy = 262;
@@ -441,14 +676,16 @@ void loop() {
     el('rect', { x: colX(2 + i) - 4, y: oy + 106, width: 8, height: 8, fill: '#141414', stroke: '#c9a227' });
     label(colX(2 + i), oy + 101, n, { size: 6.5, fill: '#ffffff', mono: true });
   });
-  label(ox + 60, oy - 10, 'OLED SSD1306 · 128x64', { size: 11, fill: '#557078', mono: true });
+  label(ox + 116, oy - 9, 'OLED SSD1306', { size: 11, fill: '#557078', mono: true, anchor: 'end' });
 
   // ---------- Copiar ----------
-  const btn = document.getElementById('copiar'), pre = document.getElementById('codigo');
-  btn.addEventListener('click', function () {
-    const done = () => { btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = 'Copiar código', 1600); };
-    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Seleccionado: Ctrl+C'; };
-    try { navigator.clipboard.writeText(pre.textContent).then(done, fallback); } catch (e) { fallback(); }
+  document.querySelectorAll('button.copiar').forEach(function (btn) {
+    const pre = document.getElementById(btn.dataset.de);
+    btn.addEventListener('click', function () {
+      const done = () => { btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = 'Copiar código', 1600); };
+      const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Seleccionado: Ctrl+C'; };
+      try { navigator.clipboard.writeText(pre.textContent).then(done, fallback); } catch (e) { fallback(); }
+    });
   });
 })();
 </script>
